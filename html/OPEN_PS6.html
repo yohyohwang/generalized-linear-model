@@ -1,0 +1,486 @@
+
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <!--
+This HTML was auto-generated from MATLAB code.
+To make changes, update the MATLAB code and republish this document.
+      --><title>PS6</title><meta name="generator" content="MATLAB 9.2"><link rel="schema.DC" href="http://purl.org/dc/elements/1.1/"><meta name="DC.date" content="2018-03-10"><meta name="DC.source" content="PS6.m"><style type="text/css">
+html,body,div,span,applet,object,iframe,h1,h2,h3,h4,h5,h6,p,blockquote,pre,a,abbr,acronym,address,big,cite,code,del,dfn,em,font,img,ins,kbd,q,s,samp,small,strike,strong,sub,sup,tt,var,b,u,i,center,dl,dt,dd,ol,ul,li,fieldset,form,label,legend,table,caption,tbody,tfoot,thead,tr,th,td{margin:0;padding:0;border:0;outline:0;font-size:100%;vertical-align:baseline;background:transparent}body{line-height:1}ol,ul{list-style:none}blockquote,q{quotes:none}blockquote:before,blockquote:after,q:before,q:after{content:'';content:none}:focus{outine:0}ins{text-decoration:none}del{text-decoration:line-through}table{border-collapse:collapse;border-spacing:0}
+
+html { min-height:100%; margin-bottom:1px; }
+html body { height:100%; margin:0px; font-family:Arial, Helvetica, sans-serif; font-size:10px; color:#000; line-height:140%; background:#fff none; overflow-y:scroll; }
+html body td { vertical-align:top; text-align:left; }
+
+h1 { padding:0px; margin:0px 0px 25px; font-family:Arial, Helvetica, sans-serif; font-size:1.5em; color:#d55000; line-height:100%; font-weight:normal; }
+h2 { padding:0px; margin:0px 0px 8px; font-family:Arial, Helvetica, sans-serif; font-size:1.2em; color:#000; font-weight:bold; line-height:140%; border-bottom:1px solid #d6d4d4; display:block; }
+h3 { padding:0px; margin:0px 0px 5px; font-family:Arial, Helvetica, sans-serif; font-size:1.1em; color:#000; font-weight:bold; line-height:140%; }
+
+a { color:#005fce; text-decoration:none; }
+a:hover { color:#005fce; text-decoration:underline; }
+a:visited { color:#004aa0; text-decoration:none; }
+
+p { padding:0px; margin:0px 0px 20px; }
+img { padding:0px; margin:0px 0px 20px; border:none; }
+p img, pre img, tt img, li img, h1 img, h2 img { margin-bottom:0px; } 
+
+ul { padding:0px; margin:0px 0px 20px 23px; list-style:square; }
+ul li { padding:0px; margin:0px 0px 7px 0px; }
+ul li ul { padding:5px 0px 0px; margin:0px 0px 7px 23px; }
+ul li ol li { list-style:decimal; }
+ol { padding:0px; margin:0px 0px 20px 0px; list-style:decimal; }
+ol li { padding:0px; margin:0px 0px 7px 23px; list-style-type:decimal; }
+ol li ol { padding:5px 0px 0px; margin:0px 0px 7px 0px; }
+ol li ol li { list-style-type:lower-alpha; }
+ol li ul { padding-top:7px; }
+ol li ul li { list-style:square; }
+
+.content { font-size:1.2em; line-height:140%; padding: 20px; }
+
+pre, code { font-size:12px; }
+tt { font-size: 1.2em; }
+pre { margin:0px 0px 20px; }
+pre.codeinput { padding:10px; border:1px solid #d3d3d3; background:#f7f7f7; }
+pre.codeoutput { padding:10px 11px; margin:0px 0px 20px; color:#4c4c4c; }
+pre.error { color:red; }
+
+@media print { pre.codeinput, pre.codeoutput { word-wrap:break-word; width:100%; } }
+
+span.keyword { color:#0000FF }
+span.comment { color:#228B22 }
+span.string { color:#A020F0 }
+span.untermstring { color:#B20000 }
+span.syscmd { color:#B28C00 }
+
+.footer { width:auto; padding:10px 0px; margin:25px 0px 0px; border-top:1px dotted #878787; font-size:0.8em; line-height:140%; font-style:italic; color:#878787; text-align:left; float:none; }
+.footer p { margin:0px; }
+.footer a { color:#878787; }
+.footer a:hover { color:#878787; text-decoration:underline; }
+.footer a:visited { color:#878787; }
+
+table th { padding:7px 5px; text-align:left; vertical-align:middle; border: 1px solid #d6d4d4; font-weight:bold; }
+table td { padding:7px 5px; text-align:left; vertical-align:top; border:1px solid #d6d4d4; }
+
+
+
+
+
+  </style></head><body><div class="content"><h2>Contents</h2><div><ul><li><a href="#2">Movement trajectory with spike times</a></li><li><a href="#3">GLM</a></li><li><a href="#4">GLM with quadratic penalty</a></li><li><a href="#5">AIC values to compare the two models</a></li><li><a href="#6">GLM with history of neuron 1</a></li><li><a href="#7">GLM with interaction terms</a></li><li><a href="#8">Plot AIC for select models to determine parsimony</a></li><li><a href="#9">GLM with only history and network interaction components</a></li></ul></div><pre class="codeinput"><span class="comment">% PS 6</span>
+<span class="comment">% Yohyoh Wang</span>
+
+clear <span class="string">all</span>
+close <span class="string">all</span>
+load <span class="string">hipp_data.mat</span>
+</pre><h2 id="2">Movement trajectory with spike times</h2><pre class="codeinput"><span class="comment">%movement trajectory</span>
+figure
+plot(xN, yN)
+
+<span class="comment">%formatting</span>
+sz = 10;
+
+<span class="comment">%overlay for neuron 1</span>
+hold <span class="string">on</span>
+plotSpikes1 = [xN(spikes == 1) yN(spikes == 1)]; <span class="comment">%takes only x and y values when N1 spiked</span>
+scatter(plotSpikes1(:,1), plotSpikes1(:,2), sz, <span class="string">'filled'</span>);
+
+<span class="comment">%overlay for neuron 2</span>
+plotSpikes2 = [xN(spikes2 == 1) yN(spikes2 == 1)]; <span class="comment">%takes only x and y values when N2 spiked</span>
+scatter(plotSpikes2(:,1), plotSpikes2(:,2), sz, <span class="string">'filled'</span>);
+
+<span class="comment">%formatting</span>
+title([<span class="string">'Movement trajectory with spikes'</span>])
+xlim([min(xN) max(xN)])
+ylim([min(yN) max(yN)])
+xlabel([<span class="string">'x coordinates'</span>])
+ylabel([<span class="string">'y coordinates'</span>])
+legend(<span class="string">'Movement trajectory'</span>, <span class="string">'Neuron 1 spikes'</span>, <span class="string">'Neuron 2 spikes'</span>, <span class="string">'Location'</span>, <span class="string">'NortheastOutside'</span>)
+
+<span class="comment">%conclusion</span>
+disp([<span class="string">'The two neurons seem to fire at similar spatial locations of the animal.'</span>])
+</pre><pre class="codeoutput">The two neurons seem to fire at similar spatial locations of the animal.
+</pre><img vspace="5" hspace="5" src="PS6_01.png" alt=""> <h2 id="3">GLM</h2><pre class="codeinput"><span class="comment">%fitting exponential linear model</span>
+[b,dev,stats] = glmfit([xN yN],spikes,<span class="string">'poisson'</span>);
+b0 = b(1); b1 = b(2); b2 = b(3); <span class="comment">%renaming to match the equation</span>
+disp([<span class="string">'The fitted model is lambda(t) = exp{'</span> num2str(b0) <span class="string">' + '</span> num2str(b2) <span class="string">'xN(t) + '</span> num2str(b2) <span class="string">'yN(t)}.'</span>])
+disp([<span class="string">'The p-value of beta_0 is '</span> num2str(stats.p(1)) <span class="string">', of beta_1 is '</span> num2str(stats.p(2)) <span class="string">', and of beta_2 is '</span> num2str(stats.p(2)) <span class="string">'.'</span>])
+disp([<span class="string">'All of these values are smaller than a p-value of 0.05, indicating that they are all statistically significant.'</span>])
+
+<span class="comment">%borrowing from hipp_glm.m</span>
+figure
+[x_new,y_new]=meshgrid(-1:.1:1);
+<span class="comment">% compute lambda for each point on this grid using the GLM model</span>
+lambda_new = exp(b0 + b1*x_new + b2*y_new );
+lambda_new(find(x_new.^2+y_new.^2&gt;1))=nan;
+h_mesh = mesh(x_new,y_new,lambda_new,<span class="string">'AlphaData'</span>,0);
+hold <span class="string">on</span>;
+plot3(cos(-pi:1e-2:pi),sin(-pi:1e-2:pi),zeros(size(-pi:1e-2:pi)));
+title([<span class="string">'Movement trajectory with predicted GLM intensity'</span>])
+xlabel([<span class="string">'x coordinates'</span>])
+ylabel([<span class="string">'y coordinates'</span>])
+
+<span class="comment">%conclusion</span>
+disp([<span class="string">'The GLM seems to predict the relative geographical area of highest firing, closbut does not seem to be as specific (includes the lower left corner of the map).'</span>])
+</pre><pre class="codeoutput">The fitted model is lambda(t) = exp{-3.2492 + -1.1801xN(t) + -1.1801yN(t)}.
+The p-value of beta_0 is 0, of beta_1 is 8.4817e-27, and of beta_2 is 8.4817e-27.
+All of these values are smaller than a p-value of 0.05, indicating that they are all statistically significant.
+The GLM seems to predict the relative geographical area of highest firing, closbut does not seem to be as specific (includes the lower left corner of the map).
+</pre><img vspace="5" hspace="5" src="PS6_02.png" alt=""> <h2 id="4">GLM with quadratic penalty</h2><pre class="codeinput">[b_quad,dev_quad,stats_quad] = glmfit([xN xN.^2 yN yN.^2],spikes,<span class="string">'poisson'</span>);
+b0 = b_quad(1); bx1 = b_quad(2); bx2 = b_quad(3); by1 = b_quad(4); by2 = b_quad(5);
+disp([<span class="string">'The fitted model is lambda(t) = exp{'</span> num2str(b0) <span class="string">' + '</span> num2str(bx1) <span class="string">'xN(t) + '</span> num2str(bx2) <span class="string">'xN(t)^2 + '</span> num2str(by1) <span class="string">'yN(t) + '</span> num2str(by2) <span class="string">'yN(t)^2}.'</span>])
+disp([<span class="string">'The p-value of beta_0 is '</span> num2str(stats_quad.p(1)) <span class="string">', of beta_1 is '</span> num2str(stats_quad.p(2)) <span class="string">', of beta_2 is '</span> num2str(stats_quad.p(2)) <span class="string">', of beta_3 is '</span> num2str(stats_quad.p(3)) <span class="string">', of beta_4 is '</span> num2str(stats_quad.p(4)) <span class="string">', and of beta_5 is '</span> num2str(stats_quad.p(5)) <span class="string">'.'</span>])
+disp([<span class="string">'All of these values are smaller than a p-value of 0.05, indicating that they are all statistically significant.'</span>])
+
+<span class="comment">%plotting GLM intensity, again borrowing from hipp_glm.m</span>
+figure
+[x_new,y_new]=meshgrid(-1:.1:1);
+<span class="comment">% compute lambda for each point on this grid using the GLM model</span>
+lambda_quad = exp(b0 + bx1*x_new + bx2*x_new.^2 + by1*y_new + bx2*y_new.^2);
+lambda_quad(find(x_new.^2+y_new.^2&gt;1))=nan;
+h_mesh = mesh(x_new,y_new,lambda_quad,<span class="string">'AlphaData'</span>,0);
+hold <span class="string">on</span>;
+plot3(cos(-pi:1e-2:pi),sin(-pi:1e-2:pi),zeros(size(-pi:1e-2:pi)));
+title([<span class="string">'Movement trajectory with predicted GLM intensity'</span>])
+xlabel([<span class="string">'x coordinates'</span>])
+ylabel([<span class="string">'y coordinates'</span>])
+
+<span class="comment">% conclusion</span>
+disp([<span class="string">'With the quadratic terms, the GLM more closely matches relative spike density from the first trajectory map.'</span>])
+</pre><pre class="codeoutput">The fitted model is lambda(t) = exp{-1.8203 + -1.4522xN(t) + -5.8108xN(t)^2 + -2.4093yN(t) + -3.6624yN(t)^2}.
+The p-value of beta_0 is 0, of beta_1 is 1.5192e-56, of beta_2 is 1.5192e-56, of beta_3 is 7.6532e-190, of beta_4 is 7.941e-141, and of beta_5 is 2.7378e-163.
+All of these values are smaller than a p-value of 0.05, indicating that they are all statistically significant.
+With the quadratic terms, the GLM more closely matches relative spike density from the first trajectory map.
+</pre><img vspace="5" hspace="5" src="PS6_03.png" alt=""> <h2 id="5">AIC values to compare the two models</h2><pre class="codeinput">aic = dev + 2*(length(b)-1);
+aic_quad = dev_quad + 2*(length(b_quad)-1);
+
+disp([<span class="string">'The AIC of the first GLM model is '</span> num2str(aic) <span class="string">'. The AIC of the second GLM model with quadratic terms is '</span> num2str(aic_quad) <span class="string">'.'</span>])
+disp([<span class="string">'The AIC of the second GLM model is smaller, which indicates that including the quadratic terms minimizes information loss, making the second model better than the first at describing the data.'</span>])
+</pre><pre class="codeoutput">The AIC of the first GLM model is 11392.1633. The AIC of the second GLM model with quadratic terms is 9149.4665.
+The AIC of the second GLM model is smaller, which indicates that including the quadratic terms minimizes information loss, making the second model better than the first at describing the data.
+</pre><h2 id="6">GLM with history of neuron 1</h2><pre class="codeinput"><span class="comment">%empty structures</span>
+p_hist = struct([]);
+b_hist = struct([]);
+dev_hist = struct([]);
+stats_hist = struct([]);
+aic_hist = zeros(1,size(spikes_hist,2));
+
+<span class="comment">%fit GLMs for history</span>
+<span class="keyword">for</span> p = 1:size(spikes_hist,2)
+    eval(sprintf(<span class="string">'p_hist{%d} = spikes_hist(:,1:p);'</span>, p)); <span class="comment">%going back to each p, saving spikes_hist</span>
+    [b_hist{p}, dev_hist{p}] = glmfit([xN xN.^2 yN yN.^2 p_hist{p}], spikes, <span class="string">'poisson'</span>); <span class="comment">%fit glm to quadratic and spikes_hist going back p</span>
+    aic_hist(p) = dev_hist{p} + 2*(length(b_hist{p})-1); <span class="comment">%calculate AIC for each p</span>
+<span class="keyword">end</span>
+
+<span class="comment">%calculate AIC</span>
+plot_aic_hist = aic_hist;
+plot_aic_hist(2,:) = 1:size(spikes_hist,2);
+
+figure
+scatter(plot_aic_hist(2,:), plot_aic_hist(1,:), <span class="string">'filled'</span>)
+title([<span class="string">'AIC vs. history'</span>])
+xlabel([<span class="string">'p'</span>])
+ylabel([<span class="string">'AIC'</span>])
+
+disp([<span class="string">'The AIC reaches its optimal (lowest value) at p = 8; a model that includes 8 ms of spiking history is optimal.'</span>])
+</pre><pre class="codeoutput">The AIC reaches its optimal (lowest value) at p = 8; a model that includes 8 ms of spiking history is optimal.
+</pre><img vspace="5" hspace="5" src="PS6_04.png" alt=""> <h2 id="7">GLM with interaction terms</h2><pre class="codeinput"><span class="comment">%fit GLMs for interaction terms</span>
+<span class="keyword">for</span> p = 1:size(spikes_hist,2)
+    eval(sprintf(<span class="string">'p_hist2{%d} = spikes2_hist(:,1:p);'</span>, p)); <span class="comment">%going back to each p, saving spikes_hist</span>
+    [b_hist12{p}, dev_hist12{p}, stat_hist12{p}] = glmfit([xN xN.^2 yN yN.^2 p_hist{p} p_hist2{p}], spikes, <span class="string">'poisson'</span>); <span class="comment">%fit glm to quadratic and spikes_hist going back p</span>
+    aic_hist12(p) = dev_hist12{p} + 2*(length(b_hist12{p})-1);
+<span class="keyword">end</span>
+
+<span class="comment">%significant parameters have a p-value of &lt;= 0.05</span>
+stats_p = zeros(length(stat_hist12{1,20}.p),size(spikes_hist,2));
+<span class="keyword">for</span> p = 1:size(spikes_hist,2)
+    stats_p(1:size(stat_hist12{1,p}.p),p) = (stat_hist12{1,p}.p &lt;= 0.05);
+<span class="keyword">end</span>
+stats_p = stats_p(6:end,:);
+
+<span class="comment">%visualize significant parameters</span>
+figure
+sz = 8;
+<span class="keyword">for</span> p = 1:size(stats_p,2)
+    <span class="keyword">for</span> param = 1:size(stats_p,1)
+        <span class="keyword">if</span> stats_p(param, p) == 1
+            hold <span class="string">on</span>
+            scatter(p, param, sz, <span class="string">'filled'</span>, <span class="string">'black'</span>);
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+title([<span class="string">'Significant parameters for each p'</span>])
+ylim([0 40])
+xlabel([<span class="string">'p (ms)'</span>])
+ylabel([<span class="string">'Parameters with a p-value &lt;= 0.05'</span>])
+
+<span class="comment">%conclusion</span>
+disp([<span class="string">'None of the interaction parameters (from beta 21 onwards) are significant.'</span>])
+</pre><pre class="codeoutput">None of the interaction parameters (from beta 21 onwards) are significant.
+</pre><img vspace="5" hspace="5" src="PS6_05.png" alt=""> <h2 id="8">Plot AIC for select models to determine parsimony</h2><pre class="codeinput">plot_aic_all(1,:) = [1 aic]; <span class="comment">%first model (xN, yN)</span>
+plot_aic_all(2,:) = [2 aic_quad];<span class="comment">%second model (quadratic)</span>
+plot_aic_all(3,:) = [3 min(aic_hist)]; <span class="comment">%third model (spiking history of neuron 1)</span>
+plot_aic_all(4,:) = [4 min(aic_hist12)]; <span class="comment">%fourth model (spiking history of neuron 2)</span>
+
+figure
+scatter(plot_aic_all(:,1), plot_aic_all(:,2), <span class="string">'filled'</span>);
+title([<span class="string">'AIC of four GLMs'</span>])
+xlim([0 5])
+xticks([1 2 3 4])
+ylabel([<span class="string">'AIC'</span>])
+models = {<span class="string">'linear'</span>; <span class="string">'quadratic'</span>; <span class="string">'spike hist n1'</span>; <span class="string">'spike hist n1xn2'</span>};
+set(gca,<span class="string">'xticklabel'</span>, models)
+
+disp([<span class="string">'The quadratic GLM with the first neuron''s spiking history has the lowest AIC and is thus the most parsimonious.'</span>])
+disp([<span class="string">'Specifically, this GLM includes the past '</span> num2str(find(aic_hist == min(aic_hist))), <span class="string">'ms of spiking.'</span>])
+</pre><pre class="codeoutput">The quadratic GLM with the first neuron's spiking history has the lowest AIC and is thus the most parsimonious.
+Specifically, this GLM includes the past 8ms of spiking.
+</pre><img vspace="5" hspace="5" src="PS6_06.png" alt=""> <h2 id="9">GLM with only history and network interaction components</h2><pre class="codeinput"><span class="keyword">for</span> p = 1:size(spikes_hist,2)
+    [b_noPos{p}, dev_noPos{p}, stat_noPos{p}] = glmfit([p_hist{p} p_hist2{p}], spikes, <span class="string">'poisson'</span>); <span class="comment">%fit glm with history and network interactions only</span>
+    aic_noPos(p) = dev_noPos{p} + 2*(length(b_noPos{p})-1);
+<span class="keyword">end</span>
+
+<span class="comment">%significant parameters have a p-value of &lt;= 0.05</span>
+stats_p_noPos = zeros(length(stat_noPos{1,20}.p),size(spikes_hist,2));
+<span class="keyword">for</span> p = 1:size(spikes_hist,2)
+    stats_p_noPos(1:size(stat_noPos{1,p}.p),p) = (stat_noPos{1,p}.p &lt;= 0.05);
+<span class="keyword">end</span>
+stats_p_noPos = stats_p_noPos(2:end,:);
+
+<span class="comment">%visualize significant parameters</span>
+figure
+sz = 8;
+<span class="keyword">for</span> p = 1:size(stats_p_noPos,2)
+    <span class="keyword">for</span> param = 1:size(stats_p_noPos,1)
+        <span class="keyword">if</span> stats_p_noPos(param, p) == 1
+            hold <span class="string">on</span>
+            scatter(p, param, sz, <span class="string">'filled'</span>, <span class="string">'black'</span>);
+        <span class="keyword">end</span>
+    <span class="keyword">end</span>
+<span class="keyword">end</span>
+title([<span class="string">'Significant parameters for each p in a position-blind model'</span>])
+ylim([0 42])
+xlim([0 20.5])
+xlabel([<span class="string">'p (ms)'</span>])
+ylabel([<span class="string">'Parameters with a p-value &lt;= 0.05'</span>])
+
+disp([<span class="string">'Unlike the other GLMs, this model considers spiking history rather than position as a main effect.'</span>])
+disp([<span class="string">'There are now significant interaction terms between the spiking history of the two neurons,'</span>])
+disp([<span class="string">'indicating that the interaction between the spike history of hippocampal neurons is independent of the rat''s position,'</span>])
+</pre><pre class="codeoutput">Unlike the other GLMs, this model considers spiking history rather than position as a main effect.
+There are now significant interaction terms between the spiking history of the two neurons,
+indicating that the interaction between the spike history of hippocampal neurons is independent of the rat's position,
+</pre><img vspace="5" hspace="5" src="PS6_07.png" alt=""> <p class="footer"><br><a href="http://www.mathworks.com/products/matlab/">Published with MATLAB&reg; R2017a</a><br></p></div><!--
+##### SOURCE BEGIN #####
+% PS 6
+% Yohyoh Wang
+
+clear all
+close all
+load hipp_data.mat
+
+%% Movement trajectory with spike times 
+
+%movement trajectory
+figure
+plot(xN, yN)
+
+%formatting 
+sz = 10;
+
+%overlay for neuron 1
+hold on
+plotSpikes1 = [xN(spikes == 1) yN(spikes == 1)]; %takes only x and y values when N1 spiked
+scatter(plotSpikes1(:,1), plotSpikes1(:,2), sz, 'filled');
+
+%overlay for neuron 2
+plotSpikes2 = [xN(spikes2 == 1) yN(spikes2 == 1)]; %takes only x and y values when N2 spiked
+scatter(plotSpikes2(:,1), plotSpikes2(:,2), sz, 'filled');
+
+%formatting
+title(['Movement trajectory with spikes'])
+xlim([min(xN) max(xN)])
+ylim([min(yN) max(yN)])
+xlabel(['x coordinates'])
+ylabel(['y coordinates'])
+legend('Movement trajectory', 'Neuron 1 spikes', 'Neuron 2 spikes', 'Location', 'NortheastOutside')
+
+%conclusion
+disp(['The two neurons seem to fire at similar spatial locations of the animal.'])
+
+%% GLM
+
+%fitting exponential linear model 
+[b,dev,stats] = glmfit([xN yN],spikes,'poisson');
+b0 = b(1); b1 = b(2); b2 = b(3); %renaming to match the equation
+disp(['The fitted model is lambda(t) = exp{' num2str(b0) ' + ' num2str(b2) 'xN(t) + ' num2str(b2) 'yN(t)}.'])
+disp(['The p-value of beta_0 is ' num2str(stats.p(1)) ', of beta_1 is ' num2str(stats.p(2)) ', and of beta_2 is ' num2str(stats.p(2)) '.'])
+disp(['All of these values are smaller than a p-value of 0.05, indicating that they are all statistically significant.'])
+
+%borrowing from hipp_glm.m
+figure
+[x_new,y_new]=meshgrid(-1:.1:1);
+% compute lambda for each point on this grid using the GLM model
+lambda_new = exp(b0 + b1*x_new + b2*y_new );
+lambda_new(find(x_new.^2+y_new.^2>1))=nan;
+h_mesh = mesh(x_new,y_new,lambda_new,'AlphaData',0);
+hold on;
+plot3(cos(-pi:1e-2:pi),sin(-pi:1e-2:pi),zeros(size(-pi:1e-2:pi)));
+title(['Movement trajectory with predicted GLM intensity'])
+xlabel(['x coordinates'])
+ylabel(['y coordinates'])
+
+%conclusion
+disp(['The GLM seems to predict the relative geographical area of highest firing, closbut does not seem to be as specific (includes the lower left corner of the map).'])
+
+%% GLM with quadratic penalty
+
+[b_quad,dev_quad,stats_quad] = glmfit([xN xN.^2 yN yN.^2],spikes,'poisson');
+b0 = b_quad(1); bx1 = b_quad(2); bx2 = b_quad(3); by1 = b_quad(4); by2 = b_quad(5);
+disp(['The fitted model is lambda(t) = exp{' num2str(b0) ' + ' num2str(bx1) 'xN(t) + ' num2str(bx2) 'xN(t)^2 + ' num2str(by1) 'yN(t) + ' num2str(by2) 'yN(t)^2}.'])
+disp(['The p-value of beta_0 is ' num2str(stats_quad.p(1)) ', of beta_1 is ' num2str(stats_quad.p(2)) ', of beta_2 is ' num2str(stats_quad.p(2)) ', of beta_3 is ' num2str(stats_quad.p(3)) ', of beta_4 is ' num2str(stats_quad.p(4)) ', and of beta_5 is ' num2str(stats_quad.p(5)) '.'])
+disp(['All of these values are smaller than a p-value of 0.05, indicating that they are all statistically significant.'])
+
+%plotting GLM intensity, again borrowing from hipp_glm.m
+figure
+[x_new,y_new]=meshgrid(-1:.1:1);
+% compute lambda for each point on this grid using the GLM model
+lambda_quad = exp(b0 + bx1*x_new + bx2*x_new.^2 + by1*y_new + bx2*y_new.^2);
+lambda_quad(find(x_new.^2+y_new.^2>1))=nan;
+h_mesh = mesh(x_new,y_new,lambda_quad,'AlphaData',0);
+hold on;
+plot3(cos(-pi:1e-2:pi),sin(-pi:1e-2:pi),zeros(size(-pi:1e-2:pi)));
+title(['Movement trajectory with predicted GLM intensity'])
+xlabel(['x coordinates'])
+ylabel(['y coordinates'])
+
+% conclusion
+disp(['With the quadratic terms, the GLM more closely matches relative spike density from the first trajectory map.'])
+
+%% AIC values to compare the two models
+
+aic = dev + 2*(length(b)-1);
+aic_quad = dev_quad + 2*(length(b_quad)-1);
+
+disp(['The AIC of the first GLM model is ' num2str(aic) '. The AIC of the second GLM model with quadratic terms is ' num2str(aic_quad) '.'])
+disp(['The AIC of the second GLM model is smaller, which indicates that including the quadratic terms minimizes information loss, making the second model better than the first at describing the data.'])
+
+%% GLM with history of neuron 1
+
+%empty structures
+p_hist = struct([]);
+b_hist = struct([]);
+dev_hist = struct([]);
+stats_hist = struct([]);
+aic_hist = zeros(1,size(spikes_hist,2));
+
+%fit GLMs for history 
+for p = 1:size(spikes_hist,2)
+    eval(sprintf('p_hist{%d} = spikes_hist(:,1:p);', p)); %going back to each p, saving spikes_hist
+    [b_hist{p}, dev_hist{p}] = glmfit([xN xN.^2 yN yN.^2 p_hist{p}], spikes, 'poisson'); %fit glm to quadratic and spikes_hist going back p
+    aic_hist(p) = dev_hist{p} + 2*(length(b_hist{p})-1); %calculate AIC for each p
+end
+
+%calculate AIC
+plot_aic_hist = aic_hist;
+plot_aic_hist(2,:) = 1:size(spikes_hist,2);
+
+figure
+scatter(plot_aic_hist(2,:), plot_aic_hist(1,:), 'filled')
+title(['AIC vs. history'])
+xlabel(['p'])
+ylabel(['AIC'])
+
+disp(['The AIC reaches its optimal (lowest value) at p = 8; a model that includes 8 ms of spiking history is optimal.'])
+
+%% GLM with interaction terms
+
+%fit GLMs for interaction terms
+for p = 1:size(spikes_hist,2)
+    eval(sprintf('p_hist2{%d} = spikes2_hist(:,1:p);', p)); %going back to each p, saving spikes_hist
+    [b_hist12{p}, dev_hist12{p}, stat_hist12{p}] = glmfit([xN xN.^2 yN yN.^2 p_hist{p} p_hist2{p}], spikes, 'poisson'); %fit glm to quadratic and spikes_hist going back p
+    aic_hist12(p) = dev_hist12{p} + 2*(length(b_hist12{p})-1);
+end
+
+%significant parameters have a p-value of <= 0.05
+stats_p = zeros(length(stat_hist12{1,20}.p),size(spikes_hist,2));
+for p = 1:size(spikes_hist,2)
+    stats_p(1:size(stat_hist12{1,p}.p),p) = (stat_hist12{1,p}.p <= 0.05);
+end
+stats_p = stats_p(6:end,:);
+
+%visualize significant parameters
+figure
+sz = 8;
+for p = 1:size(stats_p,2)
+    for param = 1:size(stats_p,1)
+        if stats_p(param, p) == 1
+            hold on
+            scatter(p, param, sz, 'filled', 'black');
+        end
+    end
+end
+title(['Significant parameters for each p'])
+ylim([0 40])
+xlabel(['p (ms)'])
+ylabel(['Parameters with a p-value <= 0.05'])
+
+%conclusion
+disp(['None of the interaction parameters (from beta 21 onwards) are significant.'])
+
+%% Plot AIC for select models to determine parsimony
+plot_aic_all(1,:) = [1 aic]; %first model (xN, yN)
+plot_aic_all(2,:) = [2 aic_quad];%second model (quadratic)
+plot_aic_all(3,:) = [3 min(aic_hist)]; %third model (spiking history of neuron 1)
+plot_aic_all(4,:) = [4 min(aic_hist12)]; %fourth model (spiking history of neuron 2) 
+
+figure
+scatter(plot_aic_all(:,1), plot_aic_all(:,2), 'filled');
+title(['AIC of four GLMs'])
+xlim([0 5])
+xticks([1 2 3 4])
+ylabel(['AIC'])
+models = {'linear'; 'quadratic'; 'spike hist n1'; 'spike hist n1xn2'};
+set(gca,'xticklabel', models) 
+
+disp(['The quadratic GLM with the first neuron''s spiking history has the lowest AIC and is thus the most parsimonious.'])
+disp(['Specifically, this GLM includes the past ' num2str(find(aic_hist == min(aic_hist))), 'ms of spiking.'])
+
+%% GLM with only history and network interaction components
+for p = 1:size(spikes_hist,2)
+    [b_noPos{p}, dev_noPos{p}, stat_noPos{p}] = glmfit([p_hist{p} p_hist2{p}], spikes, 'poisson'); %fit glm with history and network interactions only
+    aic_noPos(p) = dev_noPos{p} + 2*(length(b_noPos{p})-1);
+end
+
+%significant parameters have a p-value of <= 0.05
+stats_p_noPos = zeros(length(stat_noPos{1,20}.p),size(spikes_hist,2));
+for p = 1:size(spikes_hist,2)
+    stats_p_noPos(1:size(stat_noPos{1,p}.p),p) = (stat_noPos{1,p}.p <= 0.05);
+end
+stats_p_noPos = stats_p_noPos(2:end,:);
+
+%visualize significant parameters
+figure
+sz = 8;
+for p = 1:size(stats_p_noPos,2)
+    for param = 1:size(stats_p_noPos,1)
+        if stats_p_noPos(param, p) == 1
+            hold on
+            scatter(p, param, sz, 'filled', 'black');
+        end
+    end
+end
+title(['Significant parameters for each p in a position-blind model'])
+ylim([0 42])
+xlim([0 20.5])
+xlabel(['p (ms)'])
+ylabel(['Parameters with a p-value <= 0.05'])
+
+disp(['Unlike the other GLMs, this model considers spiking history rather than position as a main effect.'])
+disp(['There are now significant interaction terms between the spiking history of the two neurons,'])
+disp(['indicating that the interaction between the spike history of hippocampal neurons is independent of the rat''s position,'])
+
+
+
+
+##### SOURCE END #####
+--></body></html>
