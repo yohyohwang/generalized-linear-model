@@ -6,7 +6,7 @@
 % between electrode spiking data and the animal's position, history, and network effects, as well as visualize the spatial component of 
 % this model. 
 
-% See the html folder, file OPEN_PS6.html for easiest way to view my project. Alternatively, you can view the .html file at (copy/paste)
+% See the html folder, file OPEN_PS6.html for easiest way to view my project. Alternatively, you can view the .html file at
 % https://htmlpreview.github.io/?https://github.com/yohyohwang/generalized-linear-model/blob/main/html/OPEN_PS6.html
 
 Requirements: MATLAB
