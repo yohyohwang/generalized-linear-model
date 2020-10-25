@@ -1,0 +1,11 @@
+% README 
+
+% I completed this project in Winter 2018, for the course Methods in Computational Neuroscience. 
+
+% Given a MATLAB shell with an overly simple generalized linear model (GLM) construction, the task was to fit the GLM to the relationship 
+% between electrode spiking data and the animal's position, history, and network effects, as well as visualize the spatial component of 
+% this model. 
+
+% See the html folder, file OPEN_PS6.html for easiest way to view my project.  
+
+Requirements: MATLAB
